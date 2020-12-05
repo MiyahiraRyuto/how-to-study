@@ -36,4 +36,46 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+    
+        public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+        public function loadRelationshipCounts()
+    {
+        $this->loadCount('posts');
+    }
+    
+        public function favorites()
+    {
+        return $this->belongsToMany(Post::class, 'favorite', 'user_id', 'post_id')->withTimestamps();
+    }
+        public function favorite($PostId)
+    {
+        $exist = $this->is_favoriting($PostId);
+        $its_me = $this->id == $PostId;
+
+        if ($exist || $its_me) {
+            return false;
+        } else {
+            $this->favorites()->attach($PostId);
+            return true;
+        }
+    }
+        public function unfavorite($PostId)
+    {
+        $exist = $this->is_favoriting($PostId);
+        $its_me = $this->id == $PostId;
+
+        if ($exist && !$its_me) {
+            $this->favorites()->detach($PostId);
+            return true;
+        } else {
+            return false;
+        }
+    }
+        public function is_favoriting($PostId)
+    {
+        return $this->favorites()->where('post_id', $PostId)->exists();
+    }
 }
